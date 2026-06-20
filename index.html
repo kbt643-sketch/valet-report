@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>PLUSNOIR 売上日報</title>
+<style>
+  :root {
+    --bg: #0f0f1e;
+    --card: #1a1a30;
+    --card2: #22223a;
+    --border: #333355;
+    --purple: #7c6fff;
+    --purple-light: #a89fff;
+    --green: #3de89a;
+    --pink: #ff6b8a;
+    --white: #f0f0ff;
+    --gray: #8888aa;
+    --input-bg: #12122a;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: -apple-system, 'Hiragino Sans', 'ヒラギノ角ゴ ProN', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  .header {
+    background: linear-gradient(135deg, #5b4fff, #9b59ff);
+    padding: 20px 20px 18px;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(91,79,255,0.4);
+  }
+  .header h1 { font-size: 22px; font-weight: 800; letter-spacing: 2px; }
+  .header p  { font-size: 12px; opacity: 0.75; margin-top: 3px; }
+
+  .section {
+    margin: 16px 14px 0;
+    background: var(--card);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .section-title {
+    padding: 12px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--gray);
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--border);
+    background: var(--card2);
+  }
+  .section-body { padding: 14px 16px; }
+
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    color: var(--gray);
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    background: var(--input-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    color: var(--white);
+    font-size: 17px;
+    font-family: inherit;
+    padding: 12px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color: var(--purple);
+  }
+  .field input[type="number"] { font-size: 20px; font-weight: 700; }
+  .field input::placeholder { color: #44446a; }
+  .field textarea { resize: none; height: 70px; font-size: 15px; }
+
+  .bu-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .bu-toggle input { display: none; }
+  .bu-toggle label {
+    display: block;
+    text-align: center;
+    padding: 14px;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--gray);
+  }
+  .bu-toggle input:checked + label {
+    background: var(--purple);
+    border-color: var(--purple);
+    color: white;
+    box-shadow: 0 4px 15px rgba(124,111,255,0.4);
+  }
+
+  .pay-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .pay-item label { font-size: 11px; }
+  .pay-item input { font-size: 16px; font-weight: 700; }
+
+  .auto-value {
+    background: var(--input-bg);
+    border: 1.5px solid #2a2a4a;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--green);
+    letter-spacing: 1px;
+  }
+  .auto-value.last { color: #7c6fff; font-size: 24px; }
+
+  /* ── 利用明細 ── */
+  .meisai-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr auto;
+    gap: 6px;
+    margin-bottom: 8px;
+    align-items: center;
+  }
+  .meisai-row input[type="text"],
+  .meisai-row input[type="number"],
+  .meisai-row select {
+    background: var(--input-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 14px;
+    font-family: inherit;
+    padding: 10px 8px;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+  }
+  .meisai-row input[type="number"] { font-weight: 700; }
+  .meisai-row input:focus, .meisai-row select:focus { border-color: var(--purple); }
+  .meisai-row .pay-select { font-size: 12px; padding: 10px 4px; text-align: center; }
+
+  /* ── 新規アフター ── */
+  .shinki-row {
+    display: grid;
+    grid-template-columns: 1fr 90px auto;
+    gap: 6px;
+    margin-bottom: 8px;
+    align-items: center;
+  }
+  .shinki-row input[type="text"],
+  .shinki-row select {
+    background: var(--input-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 14px;
+    font-family: inherit;
+    padding: 10px 8px;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+  }
+  .shinki-row input:focus, .shinki-row select:focus { border-color: var(--purple); }
+  .shinki-row .type-select { font-size: 12px; padding: 10px 4px; text-align: center; color: var(--green); font-weight: 700; }
+
+  .del-btn {
+    background: #3a1a2a;
+    border: none;
+    color: var(--pink);
+    width: 34px;
+    height: 38px;
+    border-radius: 8px;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .add-btn {
+    width: 100%;
+    background: transparent;
+    border: 1.5px dashed var(--border);
+    color: var(--gray);
+    border-radius: 10px;
+    padding: 11px;
+    font-size: 15px;
+    cursor: pointer;
+    margin-top: 6px;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .add-btn:active { border-color: var(--purple); color: var(--purple-light); }
+
+  .shinki-count-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .generate-btn {
+    display: block;
+    width: calc(100% - 28px);
+    margin: 20px 14px 0;
+    padding: 18px;
+    background: linear-gradient(135deg, #5b4fff, #9b59ff);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 6px 24px rgba(91,79,255,0.45);
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .generate-btn:active { opacity: 0.85; transform: scale(0.98); }
+
+  #result-area { margin: 20px 14px 0; display: none; }
+  #result-area .result-title { font-size: 13px; color: var(--gray); margin-bottom: 10px; font-weight: 600; }
+  #result-canvas { width: 100%; border-radius: var(--radius); display: block; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
+  .save-hint {
+    margin-top: 12px;
+    background: var(--card2);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--gray);
+    text-align: center;
+    line-height: 1.6;
+  }
+  .save-hint strong { color: var(--green); }
+  #line-text-area {
+    margin: 14px 0 0;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 13px;
+    color: var(--white);
+    white-space: pre-wrap;
+    line-height: 1.7;
+    font-family: monospace;
+  }
+  .copy-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 13px;
+    background: var(--card2);
+    color: var(--green);
+    border: 1.5px solid var(--green);
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .copy-btn:active { background: var(--green); color: var(--bg); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>PLUSNOIR</h1>
+  <p>売上日報 入力フォーム</p>
+</div>
+
+<!-- ① 基本情報 -->
+<div class="section">
+  <div class="section-title">基本情報</div>
+  <div class="section-body">
+    <div class="field">
+      <label>日付</label>
+      <input type="date" id="date">
+    </div>
+    <div class="field">
+      <label>部</label>
+      <div class="bu-toggle">
+        <input type="radio" name="bu" id="bu1" value="1部" checked>
+        <label for="bu1">1部</label>
+        <input type="radio" name="bu" id="bu2" value="2部">
+        <label for="bu2">2部</label>
+      </div>
+    </div>
+    <div class="field">
+      <label>スタート（金庫の金額）</label>
+      <input type="number" id="start" value="20000" inputmode="numeric" oninput="calcTotals()">
+    </div>
+    <div class="field">
+      <label>組数（新規アフター込）</label>
+      <input type="number" id="kumi" placeholder="0" inputmode="numeric">
+    </div>
+  </div>
+</div>
+
+<!-- ② 利用明細 -->
+<div class="section">
+  <div class="section-title">利用明細</div>
+  <div class="section-body">
+    <div id="meisai-list"></div>
+    <button class="add-btn" onclick="addMeisai()">＋ 明細を追加</button>
+  </div>
+</div>
+
+<!-- ③ 支払い詳細 -->
+<div class="section">
+  <div class="section-title">支払い詳細（明細から自動集計）</div>
+  <div class="section-body">
+    <div class="pay-grid" style="margin-bottom:14px">
+      <div class="pay-item field">
+        <label>現金</label>
+        <input type="number" id="genkin" placeholder="0" inputmode="numeric" oninput="calcTotals()">
+      </div>
+      <div class="pay-item field">
+        <label>カード</label>
+        <input type="number" id="card" placeholder="0" inputmode="numeric" oninput="calcTotals()">
+      </div>
+      <div class="pay-item field">
+        <label>PayPay</label>
+        <input type="number" id="paypay" placeholder="0" inputmode="numeric" oninput="calcTotals()">
+      </div>
+    </div>
+    <div class="field">
+      <label>総売（新規込）— 自動計算</label>
+      <div class="auto-value" id="total-display">¥0</div>
+    </div>
+    <div class="field">
+      <label>ラスト（金庫残金 = スタート＋現金）— 自動計算</label>
+      <div class="auto-value last" id="last-display">¥20,000</div>
+    </div>
+  </div>
+</div>
+
+<!-- ④ 新規アフター -->
+<div class="section">
+  <div class="section-title">新規アフター</div>
+  <div class="section-body">
+    <div class="shinki-count-row">
+      <div class="field" style="margin:0">
+        <label>新規組数</label>
+        <input type="number" id="shinki-kumi" placeholder="0" inputmode="numeric" oninput="calcShinki()">
+      </div>
+      <div class="field" style="margin:0">
+        <label>合計（一律¥5,000）</label>
+        <div class="auto-value" id="shinki-total" style="font-size:18px">¥0</div>
+      </div>
+    </div>
+    <div id="shinki-list"></div>
+    <button class="add-btn" onclick="addShinki()">＋ 新規アフターを追加</button>
+  </div>
+</div>
+
+<!-- ⑤ 備考 -->
+<div class="section">
+  <div class="section-title">備考・経費</div>
+  <div class="section-body">
+    <div class="field">
+      <textarea id="memo" placeholder="特記事項があれば入力"></textarea>
+    </div>
+  </div>
+</div>
+
+<button class="generate-btn" onclick="generate()">日報カードを作成</button>
+
+<div id="result-area">
+  <div class="result-title">▼ 作成された日報カード</div>
+  <canvas id="result-canvas"></canvas>
+  <div class="save-hint">
+    画像を<strong>長押し → 写真に保存</strong><br>
+    そのままLINEで送れます
+  </div>
+  <div id="line-text-area"></div>
+  <button class="copy-btn" onclick="copyLineText()">LINEテキストをコピー</button>
+</div>
+
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = String(today.getMonth()+1).padStart(2,'0');
+  const d = String(today.getDate()).padStart(2,'0');
+  document.getElementById('date').value = `${y}-${m}-${d}`;
+  addMeisai();
+  calcTotals();
+});
+
+function addMeisai() {
+  const list = document.getElementById('meisai-list');
+  const row = document.createElement('div');
+  row.className = 'meisai-row';
+  row.innerHTML = `
+    <input type="text" placeholder="キャスト / お客様">
+    <select class="pay-select" onchange="autoFillPay()">
+      <option value="現金">💴現金</option>
+      <option value="カード">💳カード</option>
+      <option value="PayPay">📱Pay</option>
+    </select>
+    <input type="number" placeholder="金額" inputmode="numeric" oninput="autoFillPay()">
+    <button class="del-btn" onclick="this.parentElement.remove(); autoFillPay()">×</button>
+  `;
+  list.appendChild(row);
+}
+
+function addShinki() {
+  const list = document.getElementById('shinki-list');
+  const row = document.createElement('div');
+  row.className = 'shinki-row';
+  row.innerHTML = `
+    <input type="text" placeholder="キャスト / お客様名">
+    <select class="type-select">
+      <option value="新規">🆕 新規</option>
+      <option value="リピート">🔄 リピ</option>
+    </select>
+    <button class="del-btn" onclick="this.parentElement.remove()">×</button>
+  `;
+  list.appendChild(row);
+}
+
+function autoFillPay() {
+  let genkin = 0, card = 0, paypay = 0;
+  document.querySelectorAll('.meisai-row').forEach(row => {
+    const pay = row.querySelector('.pay-select').value;
+    const amt = Number(row.querySelector('input[type="number"]').value) || 0;
+    if (pay === '現金')  genkin  += amt;
+    if (pay === 'カード') card   += amt;
+    if (pay === 'PayPay') paypay += amt;
+  });
+  document.getElementById('genkin').value = genkin || '';
+  document.getElementById('card').value   = card   || '';
+  document.getElementById('paypay').value = paypay || '';
+  calcTotals();
+}
+
+function calcTotals() {
+  const genkin     = Number(document.getElementById('genkin').value)      || 0;
+  const card       = Number(document.getElementById('card').value)        || 0;
+  const paypay     = Number(document.getElementById('paypay').value)      || 0;
+  const start      = Number(document.getElementById('start').value)       || 0;
+  const shinkiKumi = Number(document.getElementById('shinki-kumi').value) || 0;
+  const shinkiAmt  = shinkiKumi * 5000;
+  document.getElementById('total-display').textContent = `¥${(genkin+card+paypay+shinkiAmt).toLocaleString()}`;
+  document.getElementById('last-display').textContent  = `¥${(start+genkin).toLocaleString()}`;
+}
+
+function calcShinki() {
+  const kumi = Number(document.getElementById('shinki-kumi').value) || 0;
+  document.getElementById('shinki-total').textContent = `¥${(kumi * 5000).toLocaleString()}`;
+  calcTotals();
+}
+
+function collectData() {
+  const dateVal = document.getElementById('date').value;
+  const [y,m,d] = dateVal.split('-');
+  const bu = document.querySelector('input[name="bu"]:checked').value;
+
+  const meisaiLines = [...document.querySelectorAll('.meisai-row')].map(row => {
+    const inputs = row.querySelectorAll('input');
+    const name = inputs[0].value.trim();
+    const pay  = row.querySelector('.pay-select').value;
+    const amt  = inputs[1].value;
+    return name ? `･${name}/${pay}/${Number(amt).toLocaleString()}円` : null;
+  }).filter(Boolean);
+
+  const shinkiNames = [...document.querySelectorAll('.shinki-row')].map(row => {
+    const name = row.querySelector('input').value.trim();
+    const type = row.querySelector('select').value;
+    return name ? `･${name}（${type}）` : null;
+  }).filter(Boolean);
+
+  const genkin = Number(document.getElementById('genkin').value) || 0;
+  const card   = Number(document.getElementById('card').value)   || 0;
+  const paypay = Number(document.getElementById('paypay').value) || 0;
+  const start  = Number(document.getElementById('start').value)  || 0;
+  const shinkiKumi = Number(document.getElementById('shinki-kumi').value) || 0;
+
+  return {
+    date: `${y}/${m}/${d}`, bu, start,
+    kumi: Number(document.getElementById('kumi').value) || 0,
+    meisaiLines, genkin, card, paypay,
+    total: genkin + card + paypay + shinkiKumi * 5000,
+    last: start + genkin,
+    shinkiKumi, shinkiAmount: shinkiKumi * 5000,
+    shinkiNames, memo: document.getElementById('memo').value.trim(),
+  };
+}
+
+function buildLineText(d) {
+  const sep = '━━━━━━━━━━━';
+  const meisai = d.meisaiLines.length ? d.meisaiLines.join('\n') : '（なし）';
+  const shinki = d.shinkiNames.length ? d.shinkiNames.join('\n') : '･';
+  return `${sep}
+【PLUSNOIR 売上日報】
+【日付】${d.date}
+【部】${d.bu}
+${sep}
+■ 売上詳細
+・スタート：${d.start}
+
+・組数（新規アフター込）：${d.kumi}
+
+■ 利用明細
+【名前 / 支払い / 金額】
+${meisai}
+
+■ 金額詳細
+・現売:${d.genkin}
+・カード:${d.card || ''}
+・PayPay:${d.paypay || ''}
+・総売（新規込）:${d.total}
+・ラスト:${d.last}
+${sep}
+■ 新規アフター 組数：${d.shinkiKumi}
+【名前】
+${shinki}
+${sep}
+■ 経費/備考
+${d.memo}
+${sep}`;
+}
+
+function generate() {
+  const d = collectData();
+
+  const meisaiH = Math.max(90, 38 + d.meisaiLines.length * 28 + 16);
+  const shinkiH = Math.max(78, 38 + d.shinkiNames.length * 26 + 12);
+  const totalH  = 176 + 80*4 + 82 + 32 + meisaiH + 12 + shinkiH + 12 + 82 + 40;
+
+  const canvas = document.getElementById('result-canvas');
+  const scale = 2;
+  const W = 720;
+  canvas.width  = W * scale;
+  canvas.height = totalH * scale;
+  canvas.style.width  = '100%';
+  canvas.style.height = 'auto';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(scale, scale);
+
+  const BG = '#0f0f1e', CARD = '#1a1a30', CARD2 = '#22223a';
+  const PURPLE = '#7c6fff', GREEN = '#3de89a', PINK = '#ff6b8a';
+  const WHITE = '#f0f0ff', GRAY = '#8888aa', BORDER = '#2a2a45';
+
+  function rrect(x,y,w,h,r,fill,stroke,lw=2) {
+    ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
+    ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r);
+    ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h);
+    ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r);
+    ctx.quadraticCurveTo(x,y,x+r,y);
+    ctx.closePath();
+    if(fill){ctx.fillStyle=fill;ctx.fill();}
+    if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke();}
+  }
+
+  function txt(x,y,s,size,color,weight='normal',align='left') {
+    ctx.font=`${weight} ${size}px -apple-system,'Hiragino Sans',sans-serif`;
+    ctx.fillStyle=color; ctx.textAlign=align;
+    ctx.fillText(s,x,y);
+  }
+
+  ctx.fillStyle=BG; ctx.fillRect(0,0,W,totalH);
+
+  const grad=ctx.createLinearGradient(0,0,W,0);
+  grad.addColorStop(0,'#5b4fff'); grad.addColorStop(1,'#9b59ff');
+  rrect(24,20,W-48,74,14,grad);
+  txt(W/2,65,'PLUSNOIR  売上日報',28,WHITE,'800','center');
+
+  rrect(24,106,W-48,52,12,CARD2,PURPLE,2);
+  txt(W/2,140,`${d.date}　　${d.bu}`,22,'#a89fff','700','center');
+
+  let cy=176;
+  const PAD=24, BPAD=16;
+
+  function block(x,y,w,h,label,value,accent,valColor=WHITE,lsz=12,vsz=22) {
+    rrect(x,y,w,h,12,CARD,accent,2);
+    ctx.font=`600 ${lsz}px -apple-system,'Hiragino Sans',sans-serif`;
+    ctx.fillStyle=GRAY; ctx.textAlign='left'; ctx.fillText(label,x+BPAD,y+20);
+    ctx.font=`800 ${vsz}px -apple-system,'Hiragino Sans',sans-serif`;
+    ctx.fillStyle=valColor; ctx.fillText(value,x+BPAD,y+50);
+  }
+
+  const HW=(W-48-12)/2;
+  block(PAD,cy,HW,66,'スタート',`¥${d.start.toLocaleString()}`,PURPLE);
+  block(PAD+HW+12,cy,HW,66,'組数（新規アフター込）',`${d.kumi} 組`,PINK,PINK);
+  cy+=80;
+  block(PAD,cy,HW,66,'現金',`¥${d.genkin.toLocaleString()}`,PURPLE);
+  block(PAD+HW+12,cy,HW,66,'カード',`¥${d.card.toLocaleString()}`,BORDER);
+  cy+=80;
+  block(PAD,cy,HW,66,'PayPay',`¥${d.paypay.toLocaleString()}`,PURPLE);
+  block(PAD+HW+12,cy,HW,66,'総売（新規込）',`¥${d.total.toLocaleString()}`,GREEN,GREEN);
+  cy+=80;
+  block(PAD,cy,W-48,66,'ラスト（金庫残金）',`¥${d.last.toLocaleString()}`,GREEN,GREEN,12,26);
+  cy+=82;
+
+  ctx.strokeStyle=BORDER; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(PAD,cy); ctx.lineTo(W-PAD,cy); ctx.stroke();
+  cy+=16;
+
+  rrect(PAD,cy,W-48,meisaiH,12,CARD,BORDER,1);
+  txt(PAD+BPAD,cy+18,'利用明細',12,GRAY,'600');
+  if(d.meisaiLines.length===0){
+    txt(PAD+BPAD,cy+46,'なし',16,'#44446a');
+  } else {
+    d.meisaiLines.forEach((line,i)=>txt(PAD+BPAD,cy+42+i*28,line,15,WHITE));
+  }
+  cy+=meisaiH+12;
+
+  rrect(PAD,cy,W-48,shinkiH,12,CARD,PINK,1);
+  txt(PAD+BPAD,cy+18,`新規アフター  ${d.shinkiKumi}組　¥${d.shinkiAmount.toLocaleString()}`,14,PINK,'700');
+  if(d.shinkiNames.length===0){
+    txt(PAD+BPAD,cy+46,'なし',16,'#44446a');
+  } else {
+    d.shinkiNames.forEach((name,i)=>txt(PAD+BPAD,cy+44+i*26,name,15,WHITE));
+  }
+  cy+=shinkiH+12;
+
+  rrect(PAD,cy,W-48,70,12,CARD,BORDER,1);
+  txt(PAD+BPAD,cy+18,'備考・経費',12,GRAY,'600');
+  txt(PAD+BPAD,cy+46,d.memo||'なし',15,d.memo?WHITE:'#44446a');
+  cy+=82;
+
+  txt(W/2,cy+10,'自動入力 by Claude',11,'#33335a','normal','center');
+
+  const area=document.getElementById('result-area');
+  area.style.display='block';
+  area.scrollIntoView({behavior:'smooth'});
+
+  const lineText=buildLineText(d);
+  document.getElementById('line-text-area').textContent=lineText;
+  window._lineText=lineText;
+}
+
+function copyLineText() {
+  navigator.clipboard.writeText(window._lineText||'').then(()=>{
+    const btn=document.querySelector('.copy-btn');
+    btn.textContent='✅ コピーしました';
+    setTimeout(()=>btn.textContent='LINEテキストをコピー',2000);
+  });
+}
+</script>
+</body>
+</html>
